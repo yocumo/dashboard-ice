@@ -177,20 +177,31 @@ def crear_graficos_cumplimiento(df, fecha_inicio, fecha_fin):
     dias_restantes_mes = dias_laborables_mes - dias_transcurridos
     proyeccion_final = total_actual + (promedio_diario_actual * dias_restantes_mes)
 
-    mensaje_proyeccion = f"""
-📅 Análisis de Proyección Mensual ({dias_laborables_mes} días laborables)
+    col1, col2 = st.columns(2)
 
-Progreso:
-• Monto actual: ${total_actual:,.2f}
-• Porcentaje completado: {(total_actual/META_TOTAL_MES*100):.1f}% de la meta mensual
-• Meta mensual total: ${META_TOTAL_MES:,.2f}
-• Días laborados: {dias_transcurridos} de {dias_laborables_mes}
-• Promedio diario actual: ${promedio_diario_actual:,.2f}
+    with col1:
+        st.markdown(
+            f"### 📅 Análisis de Proyección Mensual ({dias_laborables_mes} días laborables)"
+        )
 
-🎯 Proyección:
-• Al ritmo actual se alcanzaría: ${proyeccion_final:,.2f} al final del mes
-• Meta diaria necesaria para objetivo mensual: ${(META_TOTAL_MES - total_actual) / dias_restantes_mes if dias_restantes_mes > 0 else 0:,.2f}
-"""
+        st.markdown("#### Progreso:")
+        st.write(f"• Monto actual: ${total_actual:,.2f}")
+        st.write(
+            f"• Porcentaje completado: {(total_actual/META_TOTAL_MES*100):.1f}% de la meta mensual • Meta mensual total: ${META_TOTAL_MES:,.2f}"
+        )
+        st.write(
+            f"• Días laborados: {dias_transcurridos} de {dias_laborables_mes} • Promedio diario actual: ${promedio_diario_actual:,.2f}"
+        )
+
+    # Right column - Projection
+    with col2:
+        st.markdown("#### 🎯 Proyección:")
+        st.write(
+            f"• Al ritmo actual se alcanzaría: ${proyeccion_final:,.2f} al final del mes"
+        )
+        st.write(
+            f"• Meta diaria necesaria para objetivo mensual: ${(META_TOTAL_MES - total_actual) / dias_restantes_mes if dias_restantes_mes > 0 else 0:,.2f}"
+        )
 
     tecnicos_activos = df_valido["staff"].unique()
 
@@ -323,7 +334,6 @@ Progreso:
             "porcentaje_cumplimiento": porcentaje_cumplimiento,
             "dias_laborables": dias_laborables,
             "tecnicos_inactivos": tecnicos_inactivos,
-            "mensaje_proyeccion": mensaje_proyeccion,
             "meta_total_mes": META_TOTAL_MES,
         },
     )
@@ -569,7 +579,6 @@ def main():
     )
     # Mostrar mensaje de proyección
     st.write("### Análisis de Proyección")
-    st.write(metricas["mensaje_proyeccion"])
 
     # Mostrar gráfico de proyección
     st.plotly_chart(fig_projection, use_container_width=True)
