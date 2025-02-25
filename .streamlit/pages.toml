@@ -1,4 +1,10 @@
 [[pages]]
 path = "example_one.py"
-name = "Productividad Cuadrillas"
+name = "ICE| Dashboard"
 icon = "📄"
+
+
+[[pages]]
+path = "history_page.py"
+name = "Balance Histórico"
+icon = ":material/history:"
