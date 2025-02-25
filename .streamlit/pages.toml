@@ -1,7 +1,7 @@
 [[pages]]
 path = "example_one.py"
 name = "ICE| Dashboard"
-icon = "📄"
+icon = ":material/home:"
 
 
 [[pages]]
