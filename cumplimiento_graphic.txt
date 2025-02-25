@@ -1,0 +1,276 @@
+
+# def crear_graficos_cumplimiento(df, fecha_inicio, fecha_fin):
+
+#     META_DIARIA_TECNICO = 250  # Meta diaria por técnico en $
+#     TOTAL_CUADRILLAS_ACTIVAS = len(calcular_tecnicos_activos_periodo(df))
+#     # Calcular días laborables en el período
+#     dias_laborables = calcular_dias_laborables(fecha_inicio, fecha_fin)
+#     META_TOTAL = TOTAL_CUADRILLAS_ACTIVAS * META_DIARIA_TECNICO * dias_laborables
+
+#     # Calcular días laborables totales del mes (lunes a sábado)
+#     dias_laborables_mes = calcular_dias_laborables_mes(
+#         fecha_inicio.year, fecha_inicio.month
+#     )
+#     META_TOTAL_MES = (
+#         TOTAL_CUADRILLAS_ACTIVAS * META_DIARIA_TECNICO * dias_laborables_mes
+#     )
+#     # Verificar si hay datos
+#     if df.empty:
+#         return (
+#             None,
+#             None,
+#             {
+#                 "tecnicos_activos": 0,
+#                 "meta_total": META_TOTAL,
+#                 "total_alcanzado": 0,
+#                 "porcentaje_cumplimiento": 0,
+#                 "dias_laborables": dias_laborables,
+#                 "tecnicos_inactivos": list(current_staffs),
+#             },
+#         )
+
+#     # Filtrar tareas completadas o bien devueltas
+#     df_valido = df[
+#         (df["status"] == "Completada")
+#         | ((df["status"] == "Devuelta") & (df["returned_well"] == 1))
+#     ]
+
+#     # Crear gráfico de proyección
+#     df_valido["fecha"] = pd.to_datetime(df_valido["fecha"])
+#     df_diario = (
+#         df_valido.groupby(df_valido["fecha"].dt.date)["total"].sum().reset_index()
+#     )
+#     df_diario["acumulado"] = df_diario["total"].cumsum()
+
+#     # Calcular días transcurridos y total actual
+#     dias_transcurridos = len(df_diario)
+#     total_actual = df_diario["acumulado"].iloc[-1] if not df_diario.empty else 0
+
+#     # Crear gráfico de proyección
+#     fig_projection = go.Figure()
+
+#     # Línea de meta mensual con etiqueta
+#     x_mes = [fecha_inicio, fecha_fin]
+#     y_mes = [0, META_TOTAL_MES]
+#     fig_projection.add_trace(
+#         go.Scatter(
+#             x=x_mes,
+#             y=y_mes,
+#             name=f"Meta Mensual ({dias_laborables_mes} días)",
+#             line=dict(color="red", dash="dash"),
+#             text=["", f"${META_TOTAL_MES:,.0f}"],
+#             mode="lines+text",
+#             textposition="top right",
+#             textfont=dict(color="red"),
+#         )
+#     )
+
+#     # Línea de meta del período seleccionado
+#     # Línea de meta del período con etiqueta
+#     fig_projection.add_trace(
+#         go.Scatter(
+#             x=x_mes,
+#             y=[0, META_TOTAL],
+#             name=f"Meta Período ({dias_laborables} días)",
+#             line=dict(color="gray", dash="dash"),
+#             text=["", f"${META_TOTAL:,.0f}"],
+#             mode="lines+text",
+#             textposition="bottom right",
+#             textfont=dict(color="gray"),
+#         )
+#     )
+
+#     # Línea de progreso actual
+#     if not df_diario.empty:
+#         # Crear lista de textos vacíos excepto el último valor
+#         text_labels = [""] * (len(df_diario) - 1) + [f"${total_actual:,.0f}"]
+
+#         fig_projection.add_trace(
+#             go.Scatter(
+#                 x=df_diario["fecha"],
+#                 y=df_diario["acumulado"],
+#                 name=f"Progreso Actual ({dias_transcurridos} días)",
+#                 line=dict(color="blue"),
+#                 text=text_labels,
+#                 mode="lines+text",
+#                 textposition="middle right",
+#                 textfont=dict(color="blue"),
+#             )
+#         )
+
+#     fig_projection.update_layout(
+#         title=f"Progreso vs. Metas ({dias_laborables_mes} días laborables en el mes)",
+#         xaxis_title="Fecha",
+#         yaxis_title="Monto ($)",
+#         showlegend=True,
+#     )
+
+#     # TODO:: Calcular métricas de proyección mensual
+#     # Calcular métricas de proyección mensual
+#     promedio_diario_actual = (
+#         total_actual / dias_transcurridos if dias_transcurridos > 0 else 0
+#     )
+#     dias_restantes_mes = dias_laborables_mes - dias_transcurridos
+#     proyeccion_final = total_actual + (promedio_diario_actual * dias_restantes_mes)
+
+#     col11, col22 = st.columns(2)
+
+#     with col11:
+#         st.markdown(
+#             f"### 📅 Análisis de Proyección Mensual ({dias_laborables_mes} días laborables)"
+#         )
+
+#         st.markdown("#### Progreso:")
+#         st.write(f"• Monto actual: ${total_actual:,.2f}")
+#         st.write(
+#             f"• Porcentaje completado: {(total_actual/META_TOTAL_MES*100):.1f}% de la meta mensual • Meta mensual total: ${META_TOTAL_MES:,.2f}"
+#         )
+#         st.write(
+#             f"• Días laborados: {dias_transcurridos} de {dias_laborables_mes} • Promedio diario actual: ${promedio_diario_actual:,.2f}"
+#         )
+
+#     # Right column - Projection
+#     with col22:
+#         st.markdown("#### 🎯 Proyección:")
+#         st.write(
+#             f"• Al ritmo actual se alcanzaría: ${proyeccion_final:,.2f} al final del mes"
+#         )
+#         st.write(
+#             f"• Meta diaria necesaria para objetivo mensual: ${(META_TOTAL_MES - total_actual) / dias_restantes_mes if dias_restantes_mes > 0 else 0:,.2f}"
+#         )
+
+#     tecnicos_activos = df_valido["staff"].unique()
+
+#     # Calcular técnicos inactivos
+#     tecnicos_inactivos = [
+#         tech for tech in current_staffs if tech not in tecnicos_activos
+#     ]
+
+#     # Si no hay técnicos activos, retornar valores por defecto
+#     if len(tecnicos_activos) == 0:
+#         return (
+#             None,
+#             None,
+#             {
+#                 "tecnicos_activos": 0,
+#                 "meta_total": META_TOTAL,
+#                 "total_alcanzado": 0,
+#                 "porcentaje_cumplimiento": 0,
+#                 "dias_laborables": dias_laborables,
+#                 "tecnicos_inactivos": tecnicos_inactivos,
+#             },
+#         )
+
+#     # Calcular métricas por técnico
+#     metricas_tecnicos = []
+#     for tecnico in tecnicos_activos:
+#         tareas_tecnico = df_valido[df_valido["staff"] == tecnico]
+#         ingresos_tecnico = tareas_tecnico["total"].sum()
+#         # Calcular días trabajados (días únicos con tareas completadas o bien devueltas)
+#         dias_trabajados = tareas_tecnico["fecha"].dt.date.nunique()
+#         meta_individual = META_DIARIA_TECNICO * dias_trabajados
+
+#         metricas_tecnicos.append(
+#             {
+#                 "tecnico": tecnico,
+#                 "ingresos": ingresos_tecnico,
+#                 "num_tareas": len(tareas_tecnico),
+#                 "dias_trabajados": dias_trabajados,
+#                 "meta_individual": meta_individual,
+#                 "porcentaje_meta": (ingresos_tecnico / META_TOTAL * 100).round(1),
+#                 "porcentaje_meta_individual": (
+#                     (ingresos_tecnico / meta_individual * 100).round(1)
+#                     if meta_individual > 0
+#                     else 0
+#                 ),
+#             }
+#         )
+
+#     # Crear gráfico de pie de contribución por técnico
+#     datos_pie = []
+
+#     for metrica in metricas_tecnicos:
+#         datos_pie.append(
+#             f"{metrica['tecnico']}<br>"
+#             + f"Alcanzado: ${metrica['ingresos']:,.2f}<br>"
+#             + f"Tareas: {metrica['num_tareas']}<br>"
+#             + f"Días laborados: {metrica['dias_trabajados']}<br>"
+#             + f"Meta: ${metrica['meta_individual']:,.2f}<br>"
+#             + f"Porcentaje: {metrica['porcentaje_meta_individual']}%"
+#         )
+#     # TODO:: Crear gráfico de barras para comparación de meta
+#     fig_pie = go.Figure(
+#         data=[
+#             go.Pie(
+#                 labels=datos_pie,
+#                 values=[m["ingresos"] for m in metricas_tecnicos],
+#                 hole=0.3,
+#                 textposition="inside",
+#                 textinfo="none",
+#                 hovertemplate="<b>%{label}</b><extra></extra>",
+#             )
+#         ]
+#     )
+
+#     fig_pie.update_layout(
+#         title={
+#             "text": f"Contribución por Cuadrilla ({dias_laborables} días laborables)",
+#             "y": 0.95,
+#             "x": 0.5,
+#             "xanchor": "center",
+#             "yanchor": "top",
+#         },
+#         showlegend=True,
+#         legend=dict(orientation="h", yanchor="bottom", y=-0.9, xanchor="center", x=0.5),
+#     )
+#     # Crear el gráfico de torta
+
+#     total_alcanzado = sum(m["ingresos"] for m in metricas_tecnicos)
+#     porcentaje_cumplimiento = (total_alcanzado / META_TOTAL * 100).round(1)
+
+#     fig_barras = go.Figure()
+
+#     fig_barras.add_trace(
+#         go.Bar(
+#             x=["Meta"],
+#             y=[META_TOTAL],
+#             name="Meta del Período",
+#             marker_color="lightgray",
+#             text=[f"${META_TOTAL:,.2f}"],
+#             textposition="auto",
+#         )
+#     )
+
+#     fig_barras.add_trace(
+#         go.Bar(
+#             x=["Alcanzado"],
+#             y=[total_alcanzado],
+#             name=f"Alcanzado ({porcentaje_cumplimiento}%)",
+#             marker_color="rgb(0, 123, 255)",
+#             text=[f"${total_alcanzado:,.2f}"],
+#             textposition="auto",
+#         )
+#     )
+
+#     fig_barras.update_layout(
+#         title=f"Cumplimiento de Meta del Período ({dias_laborables} días laborables)",
+#         barmode="group",
+#         yaxis_title="Ingresos ($)",
+#         showlegend=True,
+#     )
+
+#     return (
+#         fig_pie,
+#         fig_barras,
+#         fig_projection,
+#         {
+#             "tecnicos_activos": len(tecnicos_activos),
+#             "meta_total": META_TOTAL,
+#             "total_alcanzado": total_alcanzado,
+#             "porcentaje_cumplimiento": porcentaje_cumplimiento,
+#             "dias_laborables": dias_laborables,
+#             "tecnicos_inactivos": tecnicos_inactivos,
+#             # "mensaje_proyeccion": mensaje_proyeccion,
+#             "meta_total_mes": META_TOTAL_MES,
+#         },
+#     )
