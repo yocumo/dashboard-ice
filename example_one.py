@@ -17,7 +17,7 @@ from helpers.helpers import (
 
 
 # API_URL = "http://localhost:8000/api"
-API_URL = "https://overtimetest.eiasa.com.co/api"
+API_URL = "https://api-ice.eiasa.com.co/api"
  
 
 current_staffs = (
